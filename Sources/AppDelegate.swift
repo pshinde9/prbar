@@ -5,7 +5,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private let notifier = Notifier()
     private var timer: Timer?
-    private var lists = PRLists(mine: [], toReview: [])
+    private var lists = PRLists(mine: [], toReview: [], commented: [], viewerLogin: "")
     private var lastError: String?
     private var lastUpdated: Date?
 
@@ -43,10 +43,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self else { return }
                 switch result {
                 case .success(let lists):
-                    self.lists = PRLists(mine: lists.mine, toReview: self.fresh(lists.toReview))
+                    self.lists = PRLists(mine: lists.mine,
+                                         toReview: self.fresh(lists.toReview),
+                                         commented: lists.commented,
+                                         viewerLogin: lists.viewerLogin)
                     self.lastError = nil
                     self.lastUpdated = Date()
-                    self.notifier.process(mine: lists.mine)
+                    self.notifier.process(lists: lists)
                 case .failure(let error):
                     self.lastError = error.localizedDescription
                 }
@@ -109,7 +112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(disabled("  \(repo)"))
             let sorted = byRepo[repo]!.sorted { $0.updatedAt > $1.updatedAt }
             for pr in sorted {
-                var label = "    \(pr.glyph)  #\(pr.number)"
+                var label = "    \(pr.glyph)\(pr.badges)  #\(pr.number)"
                 if showsAuthor, let login = pr.author?.login { label += "  @\(login)" }
                 label += "  \(pr.title)"
 
